@@ -38,11 +38,15 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
         //查询商铺缓存
         String shopJson = (String) redisTemplate.opsForValue().get(key);
         //判断是否存在
-        if (!StrUtil.isBlank(shopJson)){
+        if (StrUtil.isNotBlank(shopJson)){
             //存在直接返回
             Shop shop = JSONUtil.toBean(shopJson, Shop.class);
             return Result.ok(shop);
         }
+        //判断命中是否为空值
+        if (shopJson!=null) //null和""是两个概念，这里判断是否为"",如果是null证明其实是由这个数据的可以继续查寻，如果是""证明缓存穿透（数据库无数据）直接终止
+            return Result.fail("店铺不存在!");
+
         //不存在根据id查询数据库
         Shop shop = getById(id);
         //数据库不存在，返回错误信息
