@@ -31,6 +31,8 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
     @Resource
     private RedisIdWorker redisIdWorker;
 
+
+    //需要添加事务
     @Override
     @Transactional
     public Result seckillVoucher(Long voucherId) {
@@ -39,13 +41,18 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         //判断秒杀是否开始
         if (voucher.getBeginTime().isAfter(LocalDateTime.now()))
             return Result.fail("秒杀尚未开始");
-        //判断库存是否充足
+        //判断秒杀是否结束
         if (voucher.getEndTime().isBefore(LocalDateTime.now()))
             return Result.fail("秒杀已经结束");
+
+        //判断库存是否充足
+        if (voucher.getStock() < 1)
+            return Result.fail("库存不足");
         //扣减库存
         boolean success = seckillVoucherService.update()
                 .setSql("stock = stock - 1")
-                .eq("voucher_id", voucherId).update();
+                .eq("voucher_id", voucherId).gt("stock", 0)
+                .update();
         //创建订单
         VoucherOrder voucherOrder = new VoucherOrder();
         //订单id
