@@ -2,6 +2,7 @@ package com.hmdp.service.impl;
 
 import com.hmdp.dto.Result;
 import com.hmdp.entity.SeckillVoucher;
+import com.hmdp.entity.User;
 import com.hmdp.entity.VoucherOrder;
 import com.hmdp.mapper.VoucherOrderMapper;
 import com.hmdp.service.ISeckillVoucherService;
@@ -48,18 +49,30 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         //判断库存是否充足
         if (voucher.getStock() < 1)
             return Result.fail("库存不足");
+
+        //一人一单
+        Long userId = UserHolder.getUser().getId();
+        //查询订单
+        Integer count = query().eq("user_id", userId).eq("voucher_id", voucherId).count();
+        if (count>0)
+            return Result.fail("用户已经购买过一次！");
+
         //扣减库存
         boolean success = seckillVoucherService.update()
                 .setSql("stock = stock - 1")
                 .eq("voucher_id", voucherId).gt("stock", 0)
                 .update();
+        if (!success)
+            return Result.fail("库存不足");
+
+
+
         //创建订单
         VoucherOrder voucherOrder = new VoucherOrder();
         //订单id
         long orderId = redisIdWorker.nextId("order");
         voucherOrder.setId(orderId);
         //用户id
-        Long userId = UserHolder.getUser().getId();
         voucherOrder.setUserId(userId);
         //代金券id
         voucherOrder.setVoucherId(voucherId);
