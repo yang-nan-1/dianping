@@ -5,6 +5,9 @@
 ---
 --编写释放锁的脚本，让检验key和释放锁这两个操作实现原始性
 
+-- 切换到 db1
+redis.call('select', 1)
+
 --获取锁中的线程提示 get key
 local id = redis.call('get', KEYS[1])
 --比较线程标识与锁中的标识是否一致
