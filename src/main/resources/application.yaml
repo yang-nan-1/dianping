@@ -40,6 +40,10 @@ spring:
                     # 移除或注释以下行（与 STARTTLS 冲突）
                     # socketFactoryClass: javax.net.ssl.SSLSocketFactory
                 debug: true
+
+rocketmq:
+    name-server: 192.168.30.129:9876
+
 mybatis-plus:
     type-aliases-package: com.hmdp.entity # 别名扫描包
 logging:
