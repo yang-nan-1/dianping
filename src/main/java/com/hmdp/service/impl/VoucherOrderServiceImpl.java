@@ -86,15 +86,19 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         voucherOrder.setUserId(userId);
         //代金券id
         voucherOrder.setVoucherId(voucherId);
-        //创建阻塞队列
-        orderTasks.add(voucherOrder);
-        //获取代理对象
-        proxy = (IVoucherOrderService) AopContext.currentProxy();
+//        //创建阻塞队列
+//        orderTasks.add(voucherOrder);
+
+        //生产者发送消息
+        rocketMQTemplate.convertAndSend("seckill_order_topic", voucherOrder);
+
+//        //获取代理对象
+//        proxy = (IVoucherOrderService) AopContext.currentProxy();
         //返回订单id
         return Result.ok(orderId);
     }
 
-    //阻塞队列
+    /*//阻塞队列
     private BlockingQueue<VoucherOrder> orderTasks = new ArrayBlockingQueue<>(1024*1024);
     public static final ExecutorService SECKILL_ORDER_EXECUTOR = Executors.newSingleThreadExecutor();
     
@@ -136,7 +140,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
             //释放锁
             lock.unlock();
         }
-    }
+    }*/
 
     //需要添加事务
     @Override
