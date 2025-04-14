@@ -2,6 +2,7 @@ package com.hmdp.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.BooleanUtil;
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.hmdp.dto.Result;
 import com.hmdp.dto.UserDTO;
@@ -71,8 +72,12 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
     }
 
     private void isBlogLiked(Blog blog) {
+        UserDTO user = UserHolder.getUser();
+        if(user==null)
+            //用户未登录无需查询是否点赞
+            return;
         //1.获取登录用户
-        Long userId = UserHolder.getUser().getId();
+        Long userId = user.getId();
         //2.判断当前登录用户是否已点赞
         String key = BLOG_LIKED_KEY + blog.getId();
         Double score = stringRedisTemplate.opsForZSet().score(key, userId.toString());
@@ -117,8 +122,11 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
         }
         //2.解析出其中的用户id
         List<Long> ids = top5.stream().map(Long::valueOf).collect(Collectors.toList());
+        String join = StrUtil.join(",", ids);
         //3.根据用户id查询用户
-        List<UserDTO> userDTOS = userService.listByIds(ids)
+        List<UserDTO> userDTOS = userService.query().in("id", ids)
+                .last("order by field(id," +join+")")
+                .list()
                 .stream()
                 .map(user -> BeanUtil.copyProperties(user, UserDTO.class))
                 .collect(Collectors.toList());
