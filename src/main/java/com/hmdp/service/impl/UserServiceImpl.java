@@ -32,8 +32,6 @@ import static com.hmdp.utils.SystemConstants.USER_NICK_NAME_PREFIX;
  * 服务实现类
  * </p>
  *
- * @author 虎哥
- * @since 2021-12-22
  */
 @Service
 @Slf4j
@@ -140,7 +138,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 
     @Override
     public Result logout() {
-        return null;
+        return Result.ok();
+    }
+
+    @Override
+    public Result queryUserById(Long userId) {
+        User user = getById(userId);
+        if (user==null){
+            return Result.fail("用户不存在");
+        }
+        UserDTO userDTO = BeanUtil.copyProperties(user, UserDTO.class);
+        return Result.ok(userDTO);
     }
 
     private User createUserWithPhone(String phone) {

@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.hmdp.utils.RedisConstants.BLOG_LIKED_KEY;
+import static com.hmdp.utils.SystemConstants.MAX_PAGE_SIZE;
 import static org.springframework.beans.BeanUtils.*;
 
 /**
@@ -46,7 +47,7 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
         // 根据用户查询
         Page<Blog> page = query()
                 .orderByDesc("liked")
-                .page(new Page<>(current, SystemConstants.MAX_PAGE_SIZE));
+                .page(new Page<>(current, MAX_PAGE_SIZE));
         // 获取当前页数据
         List<Blog> records = page.getRecords();
         // 查询用户
@@ -133,6 +134,13 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
         //4.返回
 
         return Result.ok(userDTOS);
+    }
+
+    @Override
+    public Result queryBlogByUserId(Integer current, Long id) {
+        Page<Blog> page = query().eq("user_id", id).page(new Page<>(current, MAX_PAGE_SIZE));
+        List<Blog> records = page.getRecords();
+        return Result.ok(records);
     }
 
     private void queryBlogUser(Blog blog) {
