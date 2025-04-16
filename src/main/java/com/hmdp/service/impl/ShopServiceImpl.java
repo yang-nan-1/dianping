@@ -194,6 +194,10 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
             return Result.ok(Collections.emptyList());
         }
         List<GeoResult<RedisGeoCommands.GeoLocation<String>>> list = results.getContent();
+        if (from >= list.size()) {
+            //没有下一页了，结束
+            return Result.ok(Collections.emptyList());
+        }
         //4.1解析 from ~ end 的部分
         List<Long> ids = new ArrayList(list.size());
         Map<String,Distance> diatanceMap=new HashMap<>();
