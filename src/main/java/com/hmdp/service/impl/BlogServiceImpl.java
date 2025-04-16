@@ -5,6 +5,7 @@ import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.hmdp.dto.Result;
+import com.hmdp.dto.ScrollResult;
 import com.hmdp.dto.UserDTO;
 import com.hmdp.entity.Blog;
 import com.hmdp.entity.Follow;
@@ -18,9 +19,11 @@ import com.hmdp.utils.SystemConstants;
 import com.hmdp.utils.UserHolder;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -169,6 +172,49 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
         }
         //返回id
         return Result.ok(blog.getId()) ;
+    }
+
+    @Override
+    public Result queryBlogOfFollow(Long max, Integer offset) {
+        //1.获取当前用户
+        Long userId = UserHolder.getUser().getId();
+        //2.查询收件箱 ZREVRANGRBYSCORE key max min LIMIT offset count
+        String key = FEED_KEY + userId;
+        Set<ZSetOperations.TypedTuple<String>> tuples = stringRedisTemplate.opsForZSet()
+                .reverseRangeByScoreWithScores(key, 0, max, offset, 2);
+        //3.非空判断
+        if (tuples == null || tuples.isEmpty())
+            return Result.ok();
+        //4.解析数据 blogId、minTime（时间戳）、offset
+        List<Long> ids = new ArrayList<>(tuples.size());
+        long minTime = 0;
+        int ofs = 1;
+        for (ZSetOperations.TypedTuple<String> tuple:tuples){
+            //4.1 获取id
+            ids.add(Long.valueOf(tuple.getValue()));
+            //4.2获取时间戳
+            long time = tuple.getScore().longValue();
+            if (time == minTime)
+                ofs++;
+            else {
+                minTime = time;
+                ofs = 1;
+            }
+        }
+        //5.根据id查询blog
+        String idStr = StrUtil.join(",", ids);
+        List<Blog> blogs = query().in("id", ids)
+                .last("order by field(id," + idStr + ")").list();
+        for (Blog blog : blogs){
+            queryBlogUser(blog);
+            isBlogLiked(blog);
+        }
+        //封装最终结果
+        ScrollResult result = new ScrollResult();
+        result.setList(blogs);
+        result.setOffset(ofs);
+        result.setMinTime(minTime);
+        return Result.ok(result);
     }
 
     private void queryBlogUser(Blog blog) {

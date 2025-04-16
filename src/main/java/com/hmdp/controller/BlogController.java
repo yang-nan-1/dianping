@@ -70,8 +70,14 @@ public class BlogController {
     @GetMapping("/of/user")
     public Result queryBlogByUserId(
             @RequestParam(value = "current", defaultValue = "1") Integer current,
-            @RequestParam("id") Long id
-    ){
+            @RequestParam("id") Long id){
         return blogService.queryBlogByUserId(current,id);
+    }
+
+    @GetMapping("/of/follow")
+    public Result queryBlogOfFollow(
+            @RequestParam("lastId") Long max,
+            @RequestParam(value = "offset",defaultValue = "0") Integer offset){
+        return blogService.queryBlogOfFollow(max,offset);
     }
 }
