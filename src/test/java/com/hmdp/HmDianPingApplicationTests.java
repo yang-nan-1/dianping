@@ -10,6 +10,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import org.junit.jupiter.api.Test;
+import org.redisson.api.RCountDownLatch;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -107,6 +108,25 @@ public class HmDianPingApplicationTests {
             }
             stringRedisTemplate.opsForGeo().add(key,locations);
         }
+    }
+
+    /**
+     * 测试HytyperLogLog
+     */
+    @Test
+    void TestHyperLogLog(){
+        String[] values = new String[1000];
+        int j=0;
+        for (int i = 0; i < 1000000; i++) {
+            j = i%1000;
+            values[j]="user_"+i;
+            if (j==999){
+                stringRedisTemplate.opsForHyperLogLog().add("hl2",values);
+            }
+        }
+        //统计数量
+        Long count = stringRedisTemplate.opsForHyperLogLog().size("hl2");
+        System.out.println("count = "+ count);
     }
 
 }
