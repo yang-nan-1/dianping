@@ -15,6 +15,7 @@ import com.hmdp.utils.RegexUtils;
 import com.hmdp.utils.UserHolder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.connection.BitFieldSubCommands;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,7 @@ import javax.servlet.http.HttpSession;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -168,6 +170,36 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         //5.写入redis SETBIT key offset 1
         stringRedisTemplate.opsForValue().setBit(key,dayOfMonth-1,true);
         return Result.ok();
+    }
+
+    @Override
+    public Result signCount() {
+        //1.获取当前用户
+        Long userId = UserHolder.getUser().getId();
+        //2.获取日期
+        LocalDateTime now = LocalDateTime.now();
+        //3.拼接key
+        String keySuffix = now.format(DateTimeFormatter.ofPattern(":yyyyMM"));
+        String key = USER_SIGN_KEY + userId + keySuffix;
+        //4.获取今天具体时本月的第几天
+        int dayOfMonth = now.getDayOfMonth();
+        //5.获取本月截至到今天位置的所有签到记录,返回一个数字
+        List<Long> result = stringRedisTemplate.opsForValue()
+                .bitField(
+                        key, BitFieldSubCommands.create().get(BitFieldSubCommands.BitFieldType.unsigned(dayOfMonth))
+                                .valueAt(0)
+                );
+        if(result==null||result.isEmpty()){
+            return Result.ok(0);
+        }
+        Long num = result.get(0);
+        if(num==0||num==null)
+            return Result.ok(0);
+        // 将数字转换为二进制字符串，并补齐前导 0
+        String numStr = String.format("%" + dayOfMonth + "s", Long.toBinaryString(num)).replace(' ', '0');
+        int i = numStr.lastIndexOf('0');
+        int res = dayOfMonth - i - 1;
+        return Result.ok(res);
     }
 
     private User createUserWithPhone(String phone) {
