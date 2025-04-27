@@ -1,5 +1,9 @@
 package com.hmdp;
 
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.bean.copier.CopyOptions;
+import cn.hutool.core.lang.UUID;
+import com.hmdp.dto.UserDTO;
 import com.hmdp.entity.Shop;
 import com.hmdp.service.impl.ShopServiceImpl;
 
@@ -19,16 +23,18 @@ import org.springframework.data.redis.connection.RedisGeoCommands;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Stack;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static com.hmdp.utils.RedisConstants.LOGIN_USER_KEY;
 import static com.hmdp.utils.RedisConstants.SHOP_GEO_KEY;
 
 @Data
@@ -127,6 +133,68 @@ public class HmDianPingApplicationTests {
         //统计数量
         Long count = stringRedisTemplate.opsForHyperLogLog().size("hl2");
         System.out.println("count = "+ count);
+    }
+
+    //生成用户数据
+    @Test
+    public void createData(){
+        // 定义输出文件路径（可根据需要修改）
+        String filePath = "token_data.txt";
+
+        try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(filePath))) {
+            // 循环生成1-1000的序号和UUID
+            for (int i = 1; i <= 1000; i++) {
+                // 生成不带连字符的UUID（参数true表示使用基本字母数字）
+                String token = UUID.randomUUID().toString(true);
+                // 拼接行内容（格式：序号 空格 UUID）
+                String line = i + "," + token;
+                // 写入行并换行（使用系统默认换行符）
+                writer.write(line);
+                writer.newLine();
+            }
+            System.out.println("文件生成成功，路径：" + Paths.get(filePath).toAbsolutePath());
+        } catch (IOException e) {
+            System.err.println("文件写入失败: " + e.getMessage());
+        }
+    }
+
+
+    //预热信息
+    @Test
+    public void saveUserTokenToRedis() {
+        // 定义文件路径（与createData方法生成的文件路径一致）
+        String filePath = "token_data.txt";
+
+        try {
+            // 读取文件内容
+            List<String> lines = Files.readAllLines(Paths.get(filePath));
+
+            // 遍历每一行，将用户信息和token存入Redis
+            for (String line : lines) {
+                // 按逗号分割，获取userId和token
+                String[] parts = line.split(",");
+                String userId = parts[0]; // 用户ID
+                String token = parts[1];  // Token
+
+                // 将token存入Redis，key为"user:token:userId"，value为token
+                String key = LOGIN_USER_KEY + token;
+                UserDTO userDTO = UserDTO.builder()
+                        .icon("")
+                        .nickName("user_" + userId)
+                        .id(Long.parseLong(userId))
+                        .build();
+
+
+                Map<String, Object> userMap = BeanUtil.beanToMap(userDTO, new HashMap<>(),
+                        CopyOptions.create().setIgnoreNullValue(true)
+                                .setFieldValueEditor((fieldName, fieldValue) -> fieldValue.toString()));
+                stringRedisTemplate.opsForHash().putAll(LOGIN_USER_KEY+token,userMap);
+            }
+
+            System.out.println("用户信息和Token已成功存入Redis！");
+        } catch (IOException e) {
+            System.err.println("文件读取失败: " + e.getMessage());
+        }
     }
 
 }
