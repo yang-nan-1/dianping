@@ -11,9 +11,7 @@ import com.hmdp.service.IShopService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hmdp.utils.CacheClient;
 import com.hmdp.utils.RedisData;
-import org.springframework.data.geo.Distance;
-import org.springframework.data.geo.GeoResult;
-import org.springframework.data.geo.GeoResults;
+import org.springframework.data.geo.*;
 import org.springframework.data.redis.connection.RedisGeoCommands;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.domain.geo.GeoReference;
@@ -40,7 +38,7 @@ import static com.hmdp.utils.SystemConstants.DEFAULT_PAGE_SIZE;
 @Service()
 public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IShopService {
     public ShopServiceImpl() {
-        System.out.println("ShopServiceImpl is instantiated");
+
     }
 
     @Resource
@@ -184,11 +182,17 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
         int end = current *   DEFAULT_PAGE_SIZE;
         //3. 查询redis、按照距离排序、分页。结果：shopId、distance
         String key = SHOP_GEO_KEY + typeId;
+
+        // 使用 GEORADIUS 命令替代 GEOSEARCH
         GeoResults<RedisGeoCommands.GeoLocation<String>> results = stringRedisTemplate.opsForGeo()
-                .search(key,
-                        GeoReference.fromCoordinate(x, y),
-                        new Distance(5000),
-                        RedisGeoCommands.GeoSearchCommandArgs.newGeoSearchArgs().includeDistance().limit(end));
+                .radius(key, new Circle(new Point(x, y), new Distance(5000)),
+                RedisGeoCommands.GeoRadiusCommandArgs.newGeoRadiusArgs().includeDistance().sortAscending().limit(end));
+
+//        GeoResults<RedisGeoCommands.GeoLocation<String>> results = stringRedisTemplate.opsForGeo()
+//                .search(key,
+//                        GeoReference.fromCoordinate(x, y),
+//                        new Distance(5000),
+//                        RedisGeoCommands.GeoSearchCommandArgs.newGeoSearchArgs().includeDistance().limit(end));
         //4.解析出Id
         if (results==null){
             return Result.ok(Collections.emptyList());
@@ -211,7 +215,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
         });
         //5.根据id查询shop
         String idStr = StrUtil.join(",",ids);
-        List<Shop> shops = query().in("id", ids).last("ORDER BY FILED(id," + idStr + ")").list();
+        List<Shop> shops = query().in("id", ids).last("ORDER BY FIELD(id," + idStr + ")").list();
         for (Shop shop : shops) {
             shop.setDistance(diatanceMap.get(shop.getId().toString()).getValue());
         }
