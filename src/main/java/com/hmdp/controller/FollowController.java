@@ -1,8 +1,6 @@
 package com.hmdp.controller;
 
-
 import com.hmdp.service.IFollowService;
-import com.sun.xml.internal.ws.developer.MemberSubmissionAddressing;
 import org.springframework.web.bind.annotation.*;
 import com.hmdp.dto.Result;
 

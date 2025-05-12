@@ -51,6 +51,11 @@ logging:
     level:
         com.hmdp: debug
 
-
+#AI客服配置
+langchain4j:
+    community:
+        dashscope:
+            api-key: ${AL-API-KEY}
+            model-name: qwen-max
 
 
