@@ -1,19 +1,16 @@
 package com.hmdp.config;
 
 
-
-
-
+import com.hmdp.service.AIToolsService;
 import dev.langchain4j.community.model.dashscope.QwenChatModel;
-import dev.langchain4j.community.model.dashscope.QwenEmbeddingModel;
 import dev.langchain4j.community.model.dashscope.QwenStreamingChatModel;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.TokenStream;
-import dev.langchain4j.service.spring.AiService;
 import dev.langchain4j.store.embedding.elasticsearch.ElasticsearchConfigurationKnn;
 import dev.langchain4j.store.embedding.elasticsearch.ElasticsearchEmbeddingStore;
+import jakarta.annotation.Resource;
 import org.apache.http.HttpHost;
 import org.elasticsearch.client.RestClient;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,20 +20,22 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class AiConfig {
 
-
-
+    @Resource
+    private AIToolsService aiToolsService;
 
     @Value("${spring.data.elasticsearch.rest.uris}")
     private String elasticsearchUrl;
 
-    public interface QwenAI{
+    public interface QwenAI {
         //普通对话
         String chat(String question);
+
         //流式响应
         TokenStream streamResoponse(String question);
     }
+
     @Bean
-    public QwenAI qwenModel(QwenStreamingChatModel qwenStreamingChatModel,QwenChatModel qwenChatModel) {
+    public QwenAI qwenModel(QwenStreamingChatModel qwenStreamingChatModel, QwenChatModel qwenChatModel) {
 
         ChatMemory chatMemory = MessageWindowChatMemory.withMaxMessages(15);
 
@@ -44,19 +43,15 @@ public class AiConfig {
                 .chatModel(qwenChatModel)
                 .streamingChatModel(qwenStreamingChatModel)
                 .chatMemory(chatMemory)
+                .tools(aiToolsService)
                 .build();
         return model;
     }
 
 
-
-
-
-
     @Bean
     public ElasticsearchEmbeddingStore getStore() {
         // 创建Elasticsearch RestClient
-
         RestClient restClient = RestClient
                 .builder(HttpHost.create(elasticsearchUrl))
                 .build();

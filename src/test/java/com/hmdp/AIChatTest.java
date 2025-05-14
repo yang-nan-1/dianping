@@ -23,11 +23,11 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 @SpringBootTest
 public class AIChatTest {
 
+
     @Resource
     private AiConfig.QwenAI qwenModel;
     @Resource
     private QwenEmbeddingModel qwenEmbeddingModel;
-
     @Resource
     private ElasticsearchEmbeddingStore elasticsearchEmbeddingStore;
 
@@ -103,5 +103,12 @@ public class AIChatTest {
 
         ChatResponse chatResponse = futureResponse.get(30, SECONDS);
         System.out.println("\n" + chatResponse);
+    }
+
+    @Test
+    //测试AI调用工具类的能力
+    public void aiToolsTest(){
+        String chat = qwenModel.chat("未来三天有没有可抢购的优惠券？");
+        System.out.println(chat);
     }
 }
