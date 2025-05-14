@@ -1,10 +1,11 @@
 package com.hmdp.controller;
 
 import com.hmdp.service.IFollowService;
+import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
 import com.hmdp.dto.Result;
 
-import javax.annotation.Resource;
+
 
 /**
  * <p>

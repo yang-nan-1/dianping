@@ -10,7 +10,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 import java.sql.Struct;
 import java.util.List;
@@ -22,7 +22,7 @@ import static com.hmdp.utils.RedisConstants.CACHE_SHOP_TYPE;
  *  服务实现类
  * </p>
  *
- * @author 虎哥
+ *
  * @since 2021-12-22
  */
 @Service

@@ -10,7 +10,7 @@ import org.redisson.api.RedissonClient;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 
 @Slf4j

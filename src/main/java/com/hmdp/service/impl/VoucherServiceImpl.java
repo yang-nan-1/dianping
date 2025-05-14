@@ -12,7 +12,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.util.List;
 
 import static com.hmdp.utils.RedisConstants.SECKILL_STOCK_KEY;
@@ -22,7 +22,7 @@ import static com.hmdp.utils.RedisConstants.SECKILL_STOCK_KEY;
  *  服务实现类
  * </p>
  *
- * @author 虎哥
+ *
  * @since 2021-12-22
  */
 @Service

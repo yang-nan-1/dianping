@@ -8,11 +8,11 @@ import com.hmdp.entity.UserInfo;
 import com.hmdp.service.IUserInfoService;
 import com.hmdp.service.IUserService;
 import com.hmdp.utils.UserHolder;
+import jakarta.servlet.http.HttpSession;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+import jakarta.annotation.Resource;
 
-import javax.annotation.Resource;
-import javax.servlet.http.HttpSession;
 
 /**
  * <p>
