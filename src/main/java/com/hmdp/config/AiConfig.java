@@ -7,7 +7,9 @@ import dev.langchain4j.community.model.dashscope.QwenStreamingChatModel;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.service.AiServices;
+import dev.langchain4j.service.MemoryId;
 import dev.langchain4j.service.TokenStream;
+import dev.langchain4j.service.UserMessage;
 import dev.langchain4j.store.embedding.elasticsearch.ElasticsearchConfigurationKnn;
 import dev.langchain4j.store.embedding.elasticsearch.ElasticsearchEmbeddingStore;
 import jakarta.annotation.Resource;
@@ -28,21 +30,25 @@ public class AiConfig {
 
     public interface QwenAI {
         //普通对话
-        String chat(String question);
+        String chat(@UserMessage String question, @MemoryId int memoryId);
 
         //流式响应
-        TokenStream streamResoponse(String question);
+        TokenStream streamResoponse(@UserMessage String question, @MemoryId int memoryId);
     }
 
     @Bean
     public QwenAI qwenModel(QwenStreamingChatModel qwenStreamingChatModel, QwenChatModel qwenChatModel) {
 
-        ChatMemory chatMemory = MessageWindowChatMemory.withMaxMessages(15);
+
 
         QwenAI model = AiServices.builder(QwenAI.class)
                 .chatModel(qwenChatModel)
                 .streamingChatModel(qwenStreamingChatModel)
-                .chatMemory(chatMemory)
+                .chatMemoryProvider(memoryId -> MessageWindowChatMemory.builder()
+                                .maxMessages(15)
+                                .id(memoryId)
+                                .build()
+                        )
                 .tools(aiToolsService)
                 .build();
         return model;
