@@ -62,7 +62,14 @@ logging:
 langchain4j:
     community:
         dashscope:
-            api-key: ${AL-API-KEY}
-            model-name: qwen-max
+            chat-model:
+                temperature: 0.2
+                api-key: ${AL-API-KEY}
+                model-name: qwen-max
+            streaming-chat-model:
+                api-key: ${AL-API-KEY}
+                model-name: qwq-32b
+            embedding-model:
+                api-key: ${AL-API-KEY}
 
 

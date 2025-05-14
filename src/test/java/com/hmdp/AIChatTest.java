@@ -1,30 +1,30 @@
 package com.hmdp;
 
-import dev.langchain4j.community.model.dashscope.QwenChatModel;
+import com.hmdp.config.AiConfig;
 import dev.langchain4j.community.model.dashscope.QwenEmbeddingModel;
 import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
+import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.output.Response;
-import dev.langchain4j.store.embedding.EmbeddingMatch;
+import dev.langchain4j.service.TokenStream;
 import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
 import dev.langchain4j.store.embedding.EmbeddingSearchResult;
-import org.apache.http.HttpHost;
-import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestClientBuilder;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import dev.langchain4j.store.embedding.elasticsearch.ElasticsearchEmbeddingStore;
 
 import jakarta.annotation.Resource;
-import java.util.List;
+
+import java.util.concurrent.CompletableFuture;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 
 @SpringBootTest
 public class AIChatTest {
 
     @Resource
-    private QwenChatModel qwenChatModel;
+    private AiConfig.QwenAI qwenModel;
     @Resource
     private QwenEmbeddingModel qwenEmbeddingModel;
 
@@ -35,7 +35,7 @@ public class AIChatTest {
     @Test
     //测试通话
     public void test() {
-        String chat = qwenChatModel.chat("你是谁？");
+        String chat = qwenModel.chat("你是谁？");
         System.out.println(chat);
     }
 
@@ -84,5 +84,24 @@ public class AIChatTest {
         // 处理结果
         System.out.println("相似度: " + result.matches().get(0).score());
         System.out.println("内容: " + result.matches().get(0).embedded().text());
+    }
+
+    @Test
+    //测试会话记忆，这里我设置了15轮，还有流式输出
+    public void memeryChat() throws Exception{
+        String chat = qwenModel.chat("我的名字叫曹操");
+        System.out.println(chat);
+        System.out.println("--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
+        TokenStream stream = qwenModel.streamResoponse("我的名字是什么？,你必须回答我的名字是什么？");
+
+        CompletableFuture<ChatResponse> futureResponse = new CompletableFuture<>();
+
+        stream.onPartialResponse(System.out::print)
+                .onCompleteResponse(futureResponse::complete)
+                .onError(futureResponse::completeExceptionally)
+                .start();
+
+        ChatResponse chatResponse = futureResponse.get(30, SECONDS);
+        System.out.println("\n" + chatResponse);
     }
 }
